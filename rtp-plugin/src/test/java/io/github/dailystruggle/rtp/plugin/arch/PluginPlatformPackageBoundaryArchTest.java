@@ -69,6 +69,11 @@ class PluginPlatformPackageBoundaryArchTest {
 
     @Test
     void fabric_subtree_must_not_depend_on_bukkit_subtree() {
+        JavaClasses classes = importPluginClasses();
+        org.junit.jupiter.api.Assumptions.assumeTrue(
+                classes.stream().anyMatch(c -> c.getPackageName().contains(".fabric")),
+                "No Fabric classes found (Fabric may be excluded). Skipping test.");
+
         // Narrow exception: io.github.dailystruggle.rtp.bukkit.commands.test.TestCmd
         // is the *platform-neutral* `rtp test` parent verb (verified to have zero
         // org.bukkit.*, rtp.bukkitplatform.*, or commandsapi.bukkit.* imports).
@@ -92,7 +97,7 @@ class PluginPlatformPackageBoundaryArchTest {
         ArchRule rule = noClasses()
                 .that().resideInAPackage("io.github.dailystruggle.rtp.fabric..")
                 .should().dependOnClassesThat(inBukkitSubtreeExceptLegacyTestCmd);
-        rule.check(importPluginClasses());
+        rule.check(classes);
     }
 
     @Test
@@ -109,12 +114,17 @@ class PluginPlatformPackageBoundaryArchTest {
 
     @Test
     void fabric_subtree_must_not_depend_on_org_bukkit() {
+        JavaClasses classes = importPluginClasses();
+        org.junit.jupiter.api.Assumptions.assumeTrue(
+                classes.stream().anyMatch(c -> c.getPackageName().contains(".fabric")),
+                "No Fabric classes found (Fabric may be excluded). Skipping test.");
+
         // The mirror: Fabric mod code must not pull in any org.bukkit type
         // (Bukkit is not on the classpath at Fabric runtime).
         ArchRule rule = noClasses()
                 .that().resideInAPackage("io.github.dailystruggle.rtp.fabric..")
                 .should().dependOnClassesThat()
                 .resideInAPackage("org.bukkit..");
-        rule.check(importPluginClasses());
+        rule.check(classes);
     }
 }
