@@ -192,9 +192,7 @@ include 'rtp-folia:rtp-folia-v26_1_R1'
 // via project(...) dependencies, so it cannot be configured when those modules
 // are excluded. It is not part of the addon-API publish closure and nothing
 // depends on it, so it is dropped alongside the JDK-25 modules.
-if (!excludeJdk25) {
-    include 'rtp-plugin'
-}
+include 'rtp-plugin'
 
 // Fabric platform adapter — first-class in-scope as of 2026-04-30 per ADR-022.
 // rtp-fabric-common applies fabric-loom (see its build.gradle); Loom is
