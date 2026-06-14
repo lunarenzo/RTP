@@ -90,7 +90,7 @@ public class H2DatabaseAccessor extends AbstractSQLDatabaseAccessor {
   }
 
   @Override
-  public Connection getConnection() throws SQLException {
+  public synchronized Connection getConnection() throws SQLException {
     if (connection == null || connection.isClosed()) {
       connection = DriverManager.getConnection(url);
     }

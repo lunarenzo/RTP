@@ -528,7 +528,7 @@ public abstract class DatabaseAccessor<D> {
    * every persisted location row before a full state rewrite so consumed
    * entries cannot leak across restarts.
    */
-  public void clearAllCachedLocations() {}
+  public synchronized void clearAllCachedLocations() {}
 
   /**
    * Rebuild the cached-locations store from the authoritative in-memory state
@@ -557,7 +557,7 @@ public abstract class DatabaseAccessor<D> {
    * so direct unit-test calls to {@link #flushDirtyCache()} retain their
    * original semantics.
    */
-  public void rebuildCachedLocationsFromMemory() {
+  public synchronized void rebuildCachedLocationsFromMemory() {
     if (RTP.selectionAPI == null) return;
     if (RTP.selectionAPI.permRegionLookup.isEmpty()
         && RTP.selectionAPI.tempRegions.isEmpty()) return;
@@ -677,7 +677,7 @@ public abstract class DatabaseAccessor<D> {
    *
    * @param availableTime the time available for processing in nanoseconds
    */
-  public void processQueries(long availableTime) {
+  public synchronized void processQueries(long availableTime) {
     // Process file I/O tasks first — they don't require a database connection
     if (!fileWriteQueue.isEmpty() || !fileReadQueue.isEmpty()) {
       long start = System.nanoTime();

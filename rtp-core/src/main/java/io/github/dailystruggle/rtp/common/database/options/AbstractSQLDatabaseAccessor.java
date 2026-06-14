@@ -327,7 +327,7 @@ public abstract class AbstractSQLDatabaseAccessor extends DatabaseAccessor<Conne
    * from consumed-but-not-deleted locations cannot survive a restart.
    */
   @Override
-  public void clearAllCachedLocations() {
+  public synchronized void clearAllCachedLocations() {
     Connection connection = connect();
     if (connection == null) return;
     try {
@@ -346,7 +346,7 @@ public abstract class AbstractSQLDatabaseAccessor extends DatabaseAccessor<Conne
    * Purge stale cached locations from the database.
    * Stale locations are those bound to a specific player and older than 7 days.
    */
-  public void purgeStaleLocations() {
+  public synchronized void purgeStaleLocations() {
     Connection connection = connect();
     if (connection == null) return;
     try {
@@ -368,7 +368,7 @@ public abstract class AbstractSQLDatabaseAccessor extends DatabaseAccessor<Conne
   }
 
   @Override
-  public Connection connect() {
+  public synchronized Connection connect() {
     try {
       return getConnection();
     } catch (SQLException e) {

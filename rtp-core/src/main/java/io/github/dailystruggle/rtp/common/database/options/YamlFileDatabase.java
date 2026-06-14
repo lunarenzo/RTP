@@ -257,7 +257,7 @@ public class YamlFileDatabase extends DatabaseAccessor<Map<String, RtpYamlConfig
    * recreate.
    */
   @Override
-  public void clearAllCachedLocations() {
+  public synchronized void clearAllCachedLocations() {
     File file = new File(directory, "rtp_cached_locations.yml");
     if (!file.exists()) return;
     try {
