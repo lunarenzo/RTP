@@ -93,6 +93,9 @@ rootProject.name = 'RTP'
 def excludeJdk25 = startParameter.projectProperties.containsKey('excludeJdk25') ||
         System.getenv('JITPACK') != null
 
+def excludeFabric = startParameter.projectProperties.containsKey('excludeFabric') ||
+        System.getenv('EXCLUDE_FABRIC') != null
+
 include 'rtp-api'
 // Non-rtp-exclusive, platform-neutral API modules are grouped under the
 // api/ folder to declutter the repo root. The Gradle project paths and
@@ -208,54 +211,56 @@ if (!excludeJdk25) {
 // stubs and are filled in as Phase 2.5 follow-ups. Note v26_1_R1 requires
 // JDK 25 + Loom 1.15 because MC 26.1 is deobfuscated; contributors without
 // JDK 25 will see only that submodule fail toolchain provisioning.
-include 'rtp-fabric:rtp-fabric-common'
-// rtp-fabric-common-unobf -- mojmap-bytecode sibling of rtp-fabric-common
-// (rtp-fabric-ADR-009, paired with effects-api-ADR-006). Compiled under
-// unobfuscated 1.15 Loom (same regime as rtp-fabric-v26_1_R1) so its NM
-// constant-pool entries survive on a deobf MC 26.x runtime; consumed by
-// V26_*_R1FabricVersionAdapter via `api project(...)`. Requires JDK 25 +
-// fabric-loom 1.15+ (same toolchain as v26_1_R1).
-if (!excludeJdk25) {
-    include 'rtp-fabric:rtp-fabric-common-unobf'
-}
-include 'rtp-fabric:rtp-fabric-v1_20_R1'
-include 'rtp-fabric:rtp-fabric-v1_21_R1'
-include 'rtp-fabric:rtp-fabric-v1_21_R5'
-// rtp-fabric-v1_21_R11 — re-included 2026-05-06 after rtp-fabric-ADR-007
-// (Mojmap-name-decoupling) landed. The FabricVersionAdapter SPI now uses
-// project-owned wrapper records (RTPLevelHandle / RTPBlockHandle / etc.)
-// instead of net.minecraft.* types whose Mojmap names drift across point
-// releases (notably ResourceLocation -> Identifier at 1.21.11). The R11
-// adapter has been ported to the new contract and uses the new
-// TicketType(long expiryTicks, int flags) constructor with flags = 14
-// (FOR_LOADING | FOR_SIMULATION | RESETS_IDLE_TIMEOUT) — vanilla FORCED
-// minus the SERIALIZE bit, S-002 safe.
-include 'rtp-fabric:rtp-fabric-v1_21_R11'
-// v26_1_R1 -- pinned to MC 26.1 (deobfuscated). Requires JDK 25 + fabric-loom 1.15+.
-// Re-enabled 2026-05-07 to test the inline-dependency hypothesis: per
-// rtp-fabric-ADR-001, the prior reason for excluding it was the
-// `LoomGradleExtensionImpl_Decorated cannot be cast to LoomGradleExtension`
-// error that appears when two Loom plugin versions are loaded into the
-// same Gradle plugin classloader. v26_1_R1 declares its own
-// `id 'net.fabricmc.fabric-loom' version '1.15-SNAPSHOT'` (independent
-// classloader, leaf module not configured by other Loom modules), so the
-// hypothesis is that the cast bug only fires when two Loom-using
-// subprojects share a classloader scope -- which is not the case here as
-// long as no rtp-plugin / rtp-fabric-common code path triggers Loom 1.11
-// to read v26_1_R1's LoomGradleExtension.
-//
-// JDK 25 is provisioned per-subproject via Gradle's toolchain plugin --
-// the rest of the build remains on JDK 21. CI must have JDK 25 installed
-// (or `org.gradle.java.installations.auto-download=true`).
-if (!excludeJdk25) {
-    include 'rtp-fabric:rtp-fabric-v26_1_R1'
-}
-// v26_2_R1 -- EARLY/EXPERIMENTAL, pinned to the MC 26.2 pre-release
-// (26.2-pre-3). Same deobf regime as v26_1_R1 (Loom 1.15, JDK 25, no
-// mappings), cloned from it. See rtp-fabric-ADR-014. Re-pin the MC /
-// loader / fabric-api versions when 26.2 reaches final.
-if (!excludeJdk25) {
-    include 'rtp-fabric:rtp-fabric-v26_2_R1'
+if (!excludeFabric) {
+    include 'rtp-fabric:rtp-fabric-common'
+    // rtp-fabric-common-unobf -- mojmap-bytecode sibling of rtp-fabric-common
+    // (rtp-fabric-ADR-009, paired with effects-api-ADR-006). Compiled under
+    // unobfuscated 1.15 Loom (same regime as rtp-fabric-v26_1_R1) so its NM
+    // constant-pool entries survive on a deobf MC 26.x runtime; consumed by
+    // V26_*_R1FabricVersionAdapter via `api project(...)`. Requires JDK 25 +
+    // fabric-loom 1.15+ (same toolchain as v26_1_R1).
+    if (!excludeJdk25) {
+        include 'rtp-fabric:rtp-fabric-common-unobf'
+    }
+    include 'rtp-fabric:rtp-fabric-v1_20_R1'
+    include 'rtp-fabric:rtp-fabric-v1_21_R1'
+    include 'rtp-fabric:rtp-fabric-v1_21_R5'
+    // rtp-fabric-v1_21_R11 — re-included 2026-05-06 after rtp-fabric-ADR-007
+    // (Mojmap-name-decoupling) landed. The FabricVersionAdapter SPI now uses
+    // project-owned wrapper records (RTPLevelHandle / RTPBlockHandle / etc.)
+    // instead of net.minecraft.* types whose Mojmap names drift across point
+    // releases (notably ResourceLocation -> Identifier at 1.21.11). The R11
+    // adapter has been ported to the new contract and uses the new
+    // TicketType(long expiryTicks, int flags) constructor with flags = 14
+    // (FOR_LOADING | FOR_SIMULATION | RESETS_IDLE_TIMEOUT) — vanilla FORCED
+    // minus the SERIALIZE bit, S-002 safe.
+    include 'rtp-fabric:rtp-fabric-v1_21_R11'
+    // v26_1_R1 -- pinned to MC 26.1 (deobfuscated). Requires JDK 25 + fabric-loom 1.15+.
+    // Re-enabled 2026-05-07 to test the inline-dependency hypothesis: per
+    // rtp-fabric-ADR-001, the prior reason for excluding it was the
+    // `LoomGradleExtensionImpl_Decorated cannot be cast to LoomGradleExtension`
+    // error that appears when two Loom plugin versions are loaded into the
+    // same Gradle plugin classloader. v26_1_R1 declares its own
+    // `id 'net.fabricmc.fabric-loom' version '1.15-SNAPSHOT'` (independent
+    // classloader, leaf module not configured by other Loom modules), so the
+    // hypothesis is that the cast bug only fires when two Loom-using
+    // subprojects share a classloader scope -- which is not the case here as
+    // long as no rtp-plugin / rtp-fabric-common code path triggers Loom 1.11
+    // to read v26_1_R1's LoomGradleExtension.
+    //
+    // JDK 25 is provisioned per-subproject via Gradle's toolchain plugin --
+    // the rest of the build remains on JDK 21. CI must have JDK 25 installed
+    // (or `org.gradle.java.installations.auto-download=true`).
+    if (!excludeJdk25) {
+        include 'rtp-fabric:rtp-fabric-v26_1_R1'
+    }
+    // v26_2_R1 -- EARLY/EXPERIMENTAL, pinned to the MC 26.2 pre-release
+    // (26.2-pre-3). Same deobf regime as v26_1_R1 (Loom 1.15, JDK 25, no
+    // mappings), cloned from it. See rtp-fabric-ADR-014. Re-pin the MC /
+    // loader / fabric-api versions when 26.2 reaches final.
+    if (!excludeJdk25) {
+        include 'rtp-fabric:rtp-fabric-v26_2_R1'
+    }
 }
 
 // Relocate the grouped platforms/ adapters on disk while keeping their flat
@@ -281,16 +286,18 @@ project(':rtp-folia:rtp-folia-v1_20_R1').projectDir = file('platforms/rtp-folia/
 project(':rtp-folia:rtp-folia-v1_21_R1').projectDir = file('platforms/rtp-folia/rtp-folia-v1_21_R1')
 project(':rtp-folia:rtp-folia-v26_1_R1').projectDir = file('platforms/rtp-folia/rtp-folia-v26_1_R1')
 
-project(':rtp-fabric').projectDir                  = file('platforms/rtp-fabric')
-project(':rtp-fabric:rtp-fabric-common').projectDir     = file('platforms/rtp-fabric/rtp-fabric-common')
-project(':rtp-fabric:rtp-fabric-v1_20_R1').projectDir   = file('platforms/rtp-fabric/rtp-fabric-v1_20_R1')
-project(':rtp-fabric:rtp-fabric-v1_21_R1').projectDir   = file('platforms/rtp-fabric/rtp-fabric-v1_21_R1')
-project(':rtp-fabric:rtp-fabric-v1_21_R5').projectDir   = file('platforms/rtp-fabric/rtp-fabric-v1_21_R5')
-project(':rtp-fabric:rtp-fabric-v1_21_R11').projectDir  = file('platforms/rtp-fabric/rtp-fabric-v1_21_R11')
-if (!excludeJdk25) {
-    project(':rtp-fabric:rtp-fabric-common-unobf').projectDir = file('platforms/rtp-fabric/rtp-fabric-common-unobf')
-    project(':rtp-fabric:rtp-fabric-v26_1_R1').projectDir     = file('platforms/rtp-fabric/rtp-fabric-v26_1_R1')
-    project(':rtp-fabric:rtp-fabric-v26_2_R1').projectDir     = file('platforms/rtp-fabric/rtp-fabric-v26_2_R1')
+if (!excludeFabric) {
+    project(':rtp-fabric').projectDir                  = file('platforms/rtp-fabric')
+    project(':rtp-fabric:rtp-fabric-common').projectDir     = file('platforms/rtp-fabric/rtp-fabric-common')
+    project(':rtp-fabric:rtp-fabric-v1_20_R1').projectDir   = file('platforms/rtp-fabric/rtp-fabric-v1_20_R1')
+    project(':rtp-fabric:rtp-fabric-v1_21_R1').projectDir   = file('platforms/rtp-fabric/rtp-fabric-v1_21_R1')
+    project(':rtp-fabric:rtp-fabric-v1_21_R5').projectDir   = file('platforms/rtp-fabric/rtp-fabric-v1_21_R5')
+    project(':rtp-fabric:rtp-fabric-v1_21_R11').projectDir  = file('platforms/rtp-fabric/rtp-fabric-v1_21_R11')
+    if (!excludeJdk25) {
+        project(':rtp-fabric:rtp-fabric-common-unobf').projectDir = file('platforms/rtp-fabric/rtp-fabric-common-unobf')
+        project(':rtp-fabric:rtp-fabric-v26_1_R1').projectDir     = file('platforms/rtp-fabric/rtp-fabric-v26_1_R1')
+        project(':rtp-fabric:rtp-fabric-v26_2_R1').projectDir     = file('platforms/rtp-fabric/rtp-fabric-v26_2_R1')
+    }
 }
 
 // Multi-server proxy support — umbrella ADR-036 Accepted 2026-05-14.
